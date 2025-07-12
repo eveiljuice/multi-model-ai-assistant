@@ -1,0 +1,51 @@
+# Dependencies
+node_modules
+
+# Development files
+public/*.md
+*.md
+!README.md
+
+# Build cache
+.vite
+.cache
+
+# Testing
+coverage
+test
+tests
+__tests__
+
+# Documentation
+docs
+ai-docs
+
+# Development tools
+.eslintrc.*
+.eslintignore
+postcss.config.js
+
+# Environment files
+.env.local
+.env.development
+.env.test
+
+# Logs
+logs
+*.log
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp
+temp
+
+# Supabase local
+.branches
+.temp 
