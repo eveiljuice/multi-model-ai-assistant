@@ -1,0 +1,4 @@
+[submodule "claude-in-docker"]
+    path = claude-in-docker
+    url = https://github.com/eveiljuice/empty-repo.git
+    ignore = all 

@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "Russian Language Monitor",
+  "description": "Monitors all file changes and ensures AI responses are generated in Russian language",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.ts",
+      "*.md",
+      "src/**/*.js",
+      "src/**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Пожалуйста, убедитесь, что все ваши ответы и комментарии написаны на русском языке. Проанализируйте изменения в файлах и предоставьте обратную связь, предложения или объяснения исключительно на русском языке."
+  }
+}

@@ -1,0 +1,862 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom utilities for text truncation */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .line-clamp-4 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
+  /* Header layout utilities for consistent spacing */
+  .header-section {
+    display: flex;
+    align-items: center;
+    min-width: 0; /* Prevents flex items from overflowing */
+  }
+
+  .header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  /* Responsive spacing utilities */
+  .space-responsive {
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .space-responsive {
+      gap: 0.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .space-responsive {
+      gap: 1rem;
+    }
+  }
+
+  /* Logo container with proper constraints */
+  .logo-container {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: fit-content;
+    max-width: 250px;
+  }
+
+  /* Navigation container with overflow handling */
+  .nav-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding: 0 1rem;
+  }
+
+  /* Actions container with proper alignment */
+  .actions-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    min-width: fit-content;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 640px) {
+    .actions-container {
+      gap: 0.5rem;
+    }
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 1rem;
+  }
+
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* User status section responsive layout */
+  .user-status-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+    border-radius: 0.75rem;
+    background: rgba(249, 250, 251, 0.8);
+    backdrop-filter: blur(8px);
+  }
+
+  @media (min-width: 1280px) {
+    .user-status-section {
+      gap: 1rem;
+      padding: 0 1rem;
+    }
+  }
+
+  /* 
+    ИСПРАВЛЕНИЕ: Современные header layout утилиты
+    - Container queries support для адаптивности
+    - Логические CSS свойства для лучшей i18n поддержки
+    - Улучшенные focus состояния
+  */
+  .header-container {
+    container-type: inline-size;
+    container-name: header;
+  }
+
+  /* Утилиты для grid layout в header */
+  .header-grid {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    min-block-size: 4rem;
+  }
+
+  /* Улучшенные focus состояния для accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-2;
+  }
+
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-inset;
+  }
+
+  /* 
+    ИСПРАВЛЕНИЕ: Responsive spacing system
+    - Консистентные отступы на всех breakpoint'ах
+    - Fluid spacing для плавных переходов
+  */
+  .space-fluid {
+    gap: clamp(0.5rem, 2vw, 1rem);
+  }
+
+  .padding-fluid {
+    padding: clamp(0.75rem, 2vw, 1.5rem);
+  }
+
+  /* 
+    ИСПРАВЛЕНИЕ: Z-index стек для предотвращения конфликтов
+    - Определенная иерархия слоев
+    - Предсказуемое поведение dropdown'ов
+  */
+  .z-header {
+    z-index: 50;
+  }
+
+  .z-dropdown {
+    z-index: 60;
+  }
+
+  .z-backdrop {
+    z-index: 55;
+  }
+
+  .z-modal {
+    z-index: 100;
+  }
+
+  .z-tooltip {
+    z-index: 70;
+  }
+
+  /* 
+    ИСПРАВЛЕНИЕ: Container queries для responsive header компонентов
+    - Адаптивность на основе размера контейнера, а не viewport'а
+    - Более точное управление видимостью элементов
+  */
+  @container header (max-width: 768px) {
+    .header-hide-mobile {
+      display: none;
+    }
+
+    .header-compact-mobile {
+      padding: 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  @container header (max-width: 1024px) {
+    .header-hide-tablet {
+      display: none;
+    }
+
+    .header-text-tablet {
+      font-size: 0.875rem;
+    }
+  }
+
+  /* 
+    ИСПРАВЛЕНИЕ: Улучшенные transitions
+    - Плавные анимации для всех интерактивных элементов
+    - Optimized для производительности
+  */
+  .transition-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-bounce {
+    transition: transform 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Hover эффекты для header элементов */
+  .header-hover {
+    @apply transition-smooth hover:scale-105 hover:shadow-sm;
+  }
+
+  .header-hover-subtle {
+    @apply transition-smooth hover:bg-gray-50 hover:shadow-sm;
+  }
+}
+
+/* Ensure consistent card heights in grid */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color,
+    text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter,
+    backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Enhanced body styles */
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
+}
+
+/* Header responsive improvements with modern CSS Grid */
+@layer components {
+  /* 
+    Modern header grid system
+    - Responsive grid template areas for semantic layout
+    - Prevents overlapping on all screen sizes
+    - Maintains proper aspect ratios
+  */
+  .header-grid-modern {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "logo navigation actions";
+    align-items: center;
+    gap: 1rem;
+    min-height: 4rem;
+    padding: 0;
+  }
+
+  .header-logo-area {
+    grid-area: logo;
+    justify-self: start;
+  }
+
+  .header-navigation-area {
+    grid-area: navigation;
+    justify-self: center;
+    overflow: hidden;
+  }
+
+  .header-actions-area {
+    grid-area: actions;
+    justify-self: end;
+  }
+
+  /* Mobile header adjustments */
+  @media (max-width: 768px) {
+    .header-grid-modern {
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas: "logo . actions";
+      gap: 0.75rem;
+      min-height: 3.5rem;
+    }
+
+    .header-navigation-area {
+      display: none;
+    }
+  }
+
+  /* Ultra-small screen adjustments */
+  @media (max-width: 375px) {
+    .header-grid-modern {
+      gap: 0.5rem;
+      padding: 0 0.5rem;
+    }
+  }
+
+  /* 
+    Enhanced button styles for header
+    - Consistent sizing across breakpoints  
+    - Proper focus and hover states
+    - Accessibility improvements
+  */
+  .header-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .header-button {
+      padding: 0.75rem;
+      min-width: 3rem;
+      min-height: 3rem;
+    }
+  }
+
+  .header-button:hover {
+    background: rgba(243, 244, 246, 0.8);
+    transform: translateY(-1px);
+  }
+
+  .header-button:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+  }
+
+  .header-button.active {
+    background: rgba(239, 246, 255, 0.9);
+    color: rgb(29, 78, 216);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 
+    Search bar enhancements
+    - Responsive sizing and spacing
+    - Enhanced focus states
+    - Modern glass morphism effect
+  */
+  .search-container {
+    max-width: 42rem;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 3rem;
+    border: 1px solid rgba(209, 213, 219, 0.8);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (min-width: 640px) {
+    .search-input {
+      padding: 1rem 1.25rem 1rem 3.5rem;
+      border-radius: 1rem;
+      font-size: 1.125rem;
+    }
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: rgb(59, 130, 246);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1),
+      0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background: white;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgb(156, 163, 175);
+    transition: color 0.2s ease;
+  }
+
+  @media (min-width: 640px) {
+    .search-icon {
+      left: 1.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  .search-container:focus-within .search-icon {
+    color: rgb(59, 130, 246);
+  }
+}
+
+/* Glass morphism effect for cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Modern scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #cbd5e1, #94a3b8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #94a3b8, #64748b);
+}
+
+/* Enhanced button hover effects */
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Improved focus styles for accessibility */
+*:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: rgba(59, 130, 246, 0.5);
+  ring-offset: 2px;
+  ring-offset-color: white;
+}
+
+/* Modern input styles */
+input,
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+/* 
+  Responsive typography improvements
+  - Better scaling across screen sizes
+  - Improved readability
+  - Consistent line heights
+*/
+@layer utilities {
+  .text-responsive-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .text-responsive-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .text-responsive-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .text-responsive-xs {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .text-responsive-sm {
+      font-size: 1rem;
+      line-height: 1.5rem;
+    }
+
+    .text-responsive-base {
+      font-size: 1.125rem;
+      line-height: 1.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .text-responsive-base {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+  }
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Современная компонентная система для header
+  - Semantic naming для лучшей читаемости
+  - Responsive-first подход
+  - Accessibility встроенная по умолчанию
+*/
+.header-modern {
+  @apply bg-white/95 backdrop-blur-lg border-b border-gray-200/50;
+  @apply sticky top-0 z-header shadow-sm;
+  container-type: inline-size;
+  container-name: header;
+}
+
+.header-content {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.header-grid-layout {
+  @apply grid items-center min-h-16 gap-4 grid-cols-[auto_1fr_auto];
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Logo компонент с оптимизированными размерами
+  - Предотвращение layout shift'ов
+  - Responsive sizing без резких скачков
+*/
+.header-logo {
+  @apply flex items-center min-w-fit;
+}
+
+.header-logo-icon {
+  @apply w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700;
+  @apply rounded-xl flex items-center justify-center shadow-lg ring-2 ring-blue-100/50;
+  @apply transition-all duration-300 hover:ring-blue-200 hover:scale-105;
+}
+
+.header-logo-text {
+  @apply ml-3 text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700;
+  @apply bg-clip-text text-transparent whitespace-nowrap hidden sm:inline-block;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Navigation компоненты с improved responsive logic
+  - Упрощенные breakpoint'ы
+  - Лучший overflow handling
+*/
+.header-nav {
+  @apply hidden md:flex items-center justify-center;
+}
+
+.header-nav-list {
+  @apply flex items-center gap-2;
+}
+
+.header-nav-item {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm;
+  @apply transition-all duration-200 whitespace-nowrap;
+}
+
+.header-nav-item-active {
+  @apply bg-blue-100 text-blue-700 font-medium shadow-sm;
+}
+
+.header-nav-item-inactive {
+  @apply text-gray-600 hover:text-gray-900 hover:bg-gray-50;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Actions section с prioritized layout
+  - Четкая иерархия важности элементов
+  - Graceful degradation на маленьких экранах
+*/
+.header-actions {
+  @apply flex items-center gap-3 min-w-fit;
+}
+
+.header-actions-primary {
+  @apply flex items-center gap-2;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Компактные компоненты для header
+  - Оптимизированы для navigation bar
+  - Сохраняют функциональность при меньших размерах
+*/
+.header-credit-balance {
+  @apply flex items-center gap-2 px-3 py-1.5 border rounded-lg;
+  @apply transition-all duration-200 hover:shadow-sm;
+}
+
+.header-credit-balance-low {
+  @apply bg-amber-50 border-amber-200 text-amber-600;
+}
+
+.header-credit-balance-normal {
+  @apply bg-blue-50 border-blue-200 text-blue-600;
+}
+
+.header-credit-balance-high {
+  @apply bg-green-50 border-green-200 text-green-600;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: User menu с правильным z-index стеком
+  - Предотвращение конфликтов с другими элементами
+  - Плавные анимации appearance/disappearance
+*/
+.header-user-menu-button {
+  @apply flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100;
+  @apply transition-colors focus-ring;
+}
+
+.header-user-avatar {
+  @apply w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600;
+  @apply rounded-full flex items-center justify-center text-white text-sm font-medium;
+}
+
+.header-dropdown {
+  @apply absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg;
+  @apply border border-gray-200 py-2 z-dropdown;
+}
+
+.header-dropdown-backdrop {
+  @apply fixed inset-0 z-backdrop;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Mobile navigation с improved UX
+  - Лучший overflow handling
+  - Центрированный layout
+  - Touch-friendly sizing
+*/
+.header-mobile-nav {
+  @apply md:hidden border-t border-gray-200/50 py-3;
+}
+
+.header-mobile-nav-container {
+  @apply flex justify-center overflow-x-auto;
+}
+
+.header-mobile-nav-list {
+  @apply flex items-center gap-2 px-2 min-w-fit;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Search bar с enhanced focus states
+  - Улучшенная accessibility
+  - Современные focus indicators
+  - Плавные transitions
+*/
+.header-search-container {
+  @apply pb-4 pt-2;
+}
+
+.header-search-wrapper {
+  @apply max-w-2xl mx-auto;
+}
+
+.header-search-icon {
+  @apply absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none;
+}
+
+.header-search-input {
+  @apply block w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl;
+  @apply bg-white/90 backdrop-blur-sm placeholder-gray-500 text-gray-900;
+  @apply focus:outline-none focus:placeholder-gray-400 focus:ring-2;
+  @apply focus:ring-blue-500/20 focus:border-blue-500 shadow-sm;
+  @apply hover:shadow-md transition-all duration-200 text-base;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Button styles с consistent design system
+  - Unified appearance для всех кнопок в header
+  - Proper touch targets
+  - Accessibility compliance
+*/
+.header-button {
+  @apply p-2 rounded-lg transition-all duration-200 focus-ring;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+}
+
+.header-button-primary {
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white;
+  @apply hover:from-blue-700 hover:to-indigo-700 font-medium shadow-sm hover:shadow-md;
+}
+
+.header-button-secondary {
+  @apply text-gray-400 hover:text-gray-600 hover:bg-gray-100;
+}
+
+.header-button-active {
+  @apply bg-blue-100 text-blue-600;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Overflow menu styling
+  - Consistent с остальным design system'ом
+  - Proper z-index handling
+  - Smooth animations
+*/
+.header-overflow-menu {
+  @apply relative;
+}
+
+.header-overflow-menu-trigger {
+  @apply header-button header-button-secondary;
+}
+
+.header-overflow-menu-content {
+  @apply absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg;
+  @apply border border-gray-200 py-2 z-dropdown;
+}
+
+.header-overflow-menu-item {
+  @apply flex items-center w-full px-4 py-2 text-sm text-gray-700;
+  @apply hover:bg-gray-50 transition-colors;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Responsive utilities для progressive disclosure
+  - Элементы показываются/скрываются на основе приоритета
+  - Плавные transitions between breakpoints
+*/
+.show-lg {
+  @apply hidden lg:flex;
+}
+
+.show-xl {
+  @apply hidden xl:flex;
+}
+
+.show-2xl {
+  @apply hidden 2xl:inline;
+}
+
+.hide-mobile {
+  @apply hidden sm:flex;
+}
+
+.hide-tablet {
+  @apply hidden md:flex;
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Animation utilities для smooth interactions
+  - Micro-interactions для лучшего UX
+  - Performance-optimized animations
+*/
+.animate-scale-in {
+  animation: scaleIn 0.15s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 
+  ИСПРАВЛЕНИЕ: Dark mode support preparation
+  - CSS custom properties для легкого theme switching
+  - Future-proof color system
+*/
+:root {
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --header-border: rgba(229, 231, 235, 0.5);
+  --header-text: #111827;
+  --header-text-muted: #6b7280;
+  --header-button-hover: #f9fafb;
+  --header-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --header-bg: rgba(17, 24, 39, 0.95);
+    --header-border: rgba(75, 85, 99, 0.5);
+    --header-text: #f9fafb;
+    --header-text-muted: #9ca3af;
+    --header-button-hover: rgba(55, 65, 81, 0.5);
+    --header-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  }
+}

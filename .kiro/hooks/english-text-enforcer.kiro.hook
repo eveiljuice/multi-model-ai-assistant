@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "English Text Enforcer",
+  "description": "Monitors code files for non-English text elements and comments, ensuring all textual content in the codebase is written in English",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.tsx",
+      "src/**/*.ts",
+      "src/**/*.js",
+      "src/**/*.jsx",
+      "**/*.md",
+      "**/*.json",
+      "supabase/**/*.sql",
+      "**/*.config.js",
+      "**/*.config.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the modified files and identify any text elements, comments, strings, or documentation that are not in English. For each non-English text found, provide the exact location (file path and line number) and suggest the English translation. Focus on: 1) Code comments 2) String literals in UI components 3) Error messages 4) Documentation 5) Variable names or function names that use non-English words. Provide specific corrections to ensure all textual content follows English language standards."
+  }
+}

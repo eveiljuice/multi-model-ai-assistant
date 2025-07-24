@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Тестовая оплата Stripe</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .payment-link {
+        display: inline-block;
+        background: #635bff;
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin: 10px 5px;
+      }
+      .payment-link:hover {
+        background: #5a52e5;
+      }
+      .test-info {
+        background: #e3f2fd;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .step {
+        margin: 15px 0;
+        padding: 10px;
+        border-left: 4px solid #2196f3;
+        background: #f8f9fa;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Тестирование Stripe платежей</h1>
+      <p>Проверяем отправку Telegram уведомлений при успешной оплате.</p>
+
+      <div class="test-info">
+        <h3>📝 Тестовые данные карты:</h3>
+        <ul>
+          <li><strong>Номер карты:</strong> 4242 4242 4242 4242</li>
+          <li>
+            <strong>Срок действия:</strong> любая будущая дата (например: 12/25)
+          </li>
+          <li><strong>CVC:</strong> любой 3-значный код (например: 123)</li>
+          <li><strong>Почтовый индекс:</strong> любой (например: 12345)</li>
+        </ul>
+      </div>
+
+      <h3>Выберите тип тестовой оплаты:</h3>
+
+      <div>
+        <button onclick="createPayment()" class="payment-link">
+          💳 Разовая оплата ($1.00)
+        </button>
+
+        <button onclick="createSubscription()" class="payment-link">
+          🔄 Подписка ($1.00/месяц)
+        </button>
+      </div>
+
+      <div id="result" style="margin-top: 20px"></div>
+
+      <div class="step">
+        <h4>📋 Инструкция по тестированию:</h4>
+        <ol>
+          <li>Нажмите одну из кнопок выше</li>
+          <li>Откроется страница Stripe Checkout</li>
+          <li>Введите тестовые данные карты</li>
+          <li>Завершите оплату</li>
+          <li>Проверьте Telegram чат на наличие уведомления</li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      async function createPayment() {
+        document.getElementById("result").innerHTML =
+          "⏳ Создаем тестовую оплату...";
+
+        try {
+          const response = await fetch(
+            "/server/server.js" ||
+              "http://localhost:3002/api/stripe/create-checkout-session",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                priceId: "price_test_123", // Временный ID
+                mode: "payment",
+                successUrl: window.location.origin + "/success.html",
+                cancelUrl: window.location.origin + "/test-payment.html",
+                customerEmail: "test@donein5.com",
+                userId: "test-user-123",
+                credits: 10,
+              }),
+            }
+          );
+
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            document.getElementById("result").innerHTML =
+              "❌ Ошибка: " + (data.error || "Неизвестная ошибка");
+          }
+        } catch (error) {
+          // Fallback - используем предсозданную ссылку
+          window.open(
+            "https://checkout.stripe.com/c/pay/cs_live_a1C9ApuVi62f4HGugGqMPVtxyAVhw3ZrD7KzRiYBg1n8MdWS6JL6mQC1Fv#fidkdWxOYHwnPyd1blppbHNgWjA0TnQ9SH1ETjJTMWgyNmRpZnZKPFRzZjY9fX90bk1iZlM8cl9dSWhyUU9yMDJ8V1w1V3BucFxOUWdrPTc9f05zfDZ8QVY3a0lvVEdPalJQdlw3VjAzbnF1NTV2f1R2SEBWaicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl",
+            "_blank"
+          );
+          document.getElementById("result").innerHTML =
+            "✅ Открыта страница оплаты в новой вкладке";
+        }
+      }
+
+      async function createSubscription() {
+        document.getElementById("result").innerHTML =
+          "⏳ Создаем тестовую подписку...";
+
+        try {
+          const response = await fetch(
+            "http://localhost:3002/api/stripe/create-checkout-session",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                priceId: "price_1RiUt0AK7V4m73aluYckgD6P", // Существующая подписка
+                mode: "subscription",
+                successUrl: window.location.origin + "/success.html",
+                cancelUrl: window.location.origin + "/test-payment.html",
+                customerEmail: "test-subscription@donein5.com",
+                userId: "test-sub-user-456",
+                credits: 250,
+              }),
+            }
+          );
+
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            document.getElementById("result").innerHTML =
+              "❌ Ошибка: " + (data.error || "Неизвестная ошибка");
+          }
+        } catch (error) {
+          document.getElementById("result").innerHTML =
+            "❌ Ошибка подключения к серверу: " + error.message;
+        }
+      }
+    </script>
+  </body>
+</html>

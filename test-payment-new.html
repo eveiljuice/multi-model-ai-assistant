@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Тестовая оплата - Новая сессия</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .payment-link {
+        display: inline-block;
+        background: #635bff;
+        color: white;
+        padding: 20px 40px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: bold;
+        margin: 20px 0;
+        font-size: 18px;
+      }
+      .payment-link:hover {
+        background: #5a52e5;
+      }
+      .test-info {
+        background: #e3f2fd;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+        text-align: left;
+      }
+      .session-info {
+        background: #f1f8e9;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .steps {
+        background: #fff3e0;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 20px 0;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Тестовая оплата Stripe</h1>
+      <p>Проверяем Telegram уведомления при успешной оплате</p>
+
+      <div class="session-info">
+        <strong>Новая Checkout Session:</strong><br />
+        cs_live_a19GH94EPegsmaXBui1TUp99Eo4yptFalTlLzoTzTzK5lwpWTYKhfj0xqq
+      </div>
+
+      <a
+        href="https://checkout.stripe.com/c/pay/cs_live_a19GH94EPegsmaXBui1TUp99Eo4yptFalTlLzoTzTzK5lwpWTYKhfj0xqq#fidkdWxOYHwnPyd1blppbHNgWjA0TnQ9SH1ETjJTMWgyNmRpZnZKPFRzZjY9fX90bk1iZlM8cl9dSWhyUU9yMDJ8V1w1V3BucFxOUWdrPTc9f05zfDZ8QVY3a0lvVEdPalJQdlw3VjAzbnF1NTV2f1R2SEBWaicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"
+        class="payment-link"
+        target="_blank"
+      >
+        💳 Перейти к тестовой оплате ($1.00)
+      </a>
+
+      <div class="test-info">
+        <h3>📝 Тестовые данные карты:</h3>
+        <ul>
+          <li><strong>Номер карты:</strong> 4242 4242 4242 4242</li>
+          <li><strong>Срок действия:</strong> 12/25</li>
+          <li><strong>CVC:</strong> 123</li>
+          <li><strong>Почтовый индекс:</strong> 12345</li>
+          <li><strong>Имя:</strong> Test User</li>
+        </ul>
+      </div>
+
+      <div class="steps">
+        <h3>📋 Пошаговая инструкция:</h3>
+        <ol>
+          <li><strong>Нажмите</strong> на синюю кнопку выше</li>
+          <li><strong>Заполните форму</strong> тестовыми данными карты</li>
+          <li><strong>Введите email:</strong> test@donein5.com</li>
+          <li><strong>Нажмите "Подписаться"</strong></li>
+          <li><strong>Дождитесь</strong> завершения оплаты</li>
+          <li>
+            <strong>Проверьте Telegram чат</strong> на наличие уведомления
+          </li>
+        </ol>
+      </div>
+
+      <div
+        style="
+          margin-top: 30px;
+          padding: 15px;
+          background: #e8f5e8;
+          border-radius: 5px;
+        "
+      >
+        <p><strong>✅ Что должно произойти:</strong></p>
+        <p>
+          После успешной оплаты webhook отправит уведомление в Telegram с
+          деталями платежа, включая сумму ($1.00), кредиты (10), email
+          пользователя и ID сессии.
+        </p>
+      </div>
+
+      <div style="margin-top: 20px">
+        <button
+          onclick="checkStatus()"
+          style="
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+          "
+        >
+          🔍 Проверить статус оплаты
+        </button>
+        <div
+          id="status"
+          style="
+            margin-top: 15px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            display: none;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      async function checkStatus() {
+        const statusDiv = document.getElementById("status");
+        statusDiv.style.display = "block";
+        statusDiv.innerHTML = "⏳ Проверяем статус оплаты...";
+
+        // Здесь можно добавить AJAX запрос для проверки статуса
+        // Пока просто показываем инструкцию
+        setTimeout(() => {
+          statusDiv.innerHTML = `
+                    <strong>📋 Как проверить статус:</strong><br>
+                    1. Откройте командную строку<br>
+                    2. Выполните команду:<br>
+                    <code style="background: #333; color: white; padding: 5px; border-radius: 3px;">
+                    node check-stripe-webhooks.cjs session cs_live_a19GH94EPegsmaXBui1TUp99Eo4yptFalTlLzoTzTzK5lwpWTYKhfj0xqq
+                    </code>
+                `;
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>

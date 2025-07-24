@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  claude-dev:
+    image: node:18
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: tail -f /dev/null
+    

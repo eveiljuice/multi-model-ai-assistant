@@ -1,0 +1,46 @@
+{
+  "name": "api-test-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive API testing suite for Multi-Model AI Assistant",
+  "main": "test-runner.js",
+  "scripts": {
+    "test": "node test-runner.js",
+    "test:verbose": "node test-runner.js --verbose",
+    "test:save": "node test-runner.js --save",
+    "test:json": "node test-runner.js --json",
+    "test:edge-functions": "node edge-functions-test.js",
+    "test:edge-functions:verbose": "node edge-functions-test.js --verbose",
+    "test:comprehensive": "node api-comprehensive-test.ts",
+    "test:all": "npm run test && npm run test:edge-functions",
+    "setup": "npm install",
+    "report": "node generate-report.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.51.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3",
+    "fs-extra": "^11.1.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "api",
+    "testing",
+    "supabase",
+    "edge-functions",
+    "ai",
+    "stripe",
+    "telegram"
+  ],
+  "author": "Multi-Model AI Assistant Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
