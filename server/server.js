@@ -46,9 +46,28 @@ async function sendTelegramMessage(text) {
   }
 }
 
-// Middleware
+// Middleware - CORS для всех окружений
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'http://localhost:5174', 
+  'http://localhost:3000',
+  'https://multi-model-ai-assistant.netlify.app', // ваш production домен
+  'https://eveiljuice.netlify.app', // альтернативный домен если есть
+  process.env.FRONTEND_URL // дополнительный домен из переменных окружения
+].filter(Boolean); // убираем undefined значения
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Разрешаем запросы без origin (мобильные приложения, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.warn('⚠️ CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

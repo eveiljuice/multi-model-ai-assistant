@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Копируем package.json и устанавливаем зависимости
+COPY server/package*.json ./
+RUN npm ci --only=production
+
+# Копируем исходный код
+COPY server/server.js ./
+
+# Создаем пользователя без прав root
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S stripe -u 1001
+USER stripe
+
+# Указываем порт
+EXPOSE 3002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3002/health || exit 1
+
+# Запускаем приложение
+CMD ["npm", "start"]

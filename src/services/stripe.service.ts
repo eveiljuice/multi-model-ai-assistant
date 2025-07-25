@@ -135,13 +135,9 @@ class StripeService {
   }): Promise<any> {
     console.log('📤 Sending request to create checkout session:', options);
     
-    // Используем Edge Function как основной метод
-    try {
-      return await this.createCheckoutViaEdgeFunction(options);
-    } catch (edgeError) {
-      console.warn('⚠️ Edge Function failed, trying Express server fallback:', edgeError);
-      return await this.createCheckoutViaExpressServer(options);
-    }
+    // Используем только Express server для надежности
+    console.log('🎯 Using Express server as primary method');
+    return await this.createCheckoutViaExpressServer(options);
   }
 
   private async createCheckoutViaEdgeFunction(options: any): Promise<any> {
@@ -191,48 +187,47 @@ class StripeService {
   }
 
   private async createCheckoutViaExpressServer(options: any): Promise<any> {
-    // Этот метод теперь служит как fallback для прямых HTTP запросов
-    // В production используем проксированные запросы к Supabase Edge Functions
+    // Express server URLs для разных окружений
     let apiUrl: string;
     
-    if (window.location.hostname === 'localhost') {
-      // В development режиме проверяем, работает ли Express сервер
+    // Определяем URL сервера в зависимости от окружения
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // Development mode - локальный Express сервер
+      apiUrl = 'http://localhost:3002/api/stripe/create-checkout-session';
+      
+      // Проверяем доступность сервера
       try {
         const healthCheck = await fetch('http://localhost:3002/health', { 
           method: 'GET',
-          signal: AbortSignal.timeout(2000) // 2 секунды таймаут
+          signal: AbortSignal.timeout(3000) // 3 секунды таймаут
         });
-        if (healthCheck.ok) {
-          apiUrl = 'http://localhost:3002/api/stripe/create-checkout-session';
-        } else {
-          throw new Error('Express server not responding');
+        if (!healthCheck.ok) {
+          throw new Error('Express server health check failed');
         }
+        console.log('✅ Express server is healthy');
       } catch (error) {
-        console.warn('🚫 Express server not available, this will fail in development without server');
-        throw new Error('Development server not running. Please run: npm run server');
+        console.error('🚫 Express server not available:', error);
+        throw new Error('Express server not running. Please run: npm run server');
       }
     } else {
-      // В production Netlify проксирует к Supabase Edge Functions
-      // Netlify должен проксировать /api/* к Supabase functions
-      apiUrl = '/api/stripe/create-checkout-session';
+      // Production mode - используем Render/Heroku/Railway URL
+      // Эти переменные должны быть настроены в Netlify Environment Variables
+      const productionServerUrl = import.meta.env.VITE_STRIPE_SERVER_URL || 
+                                  window.localStorage.getItem('stripe_server_url') ||
+                                  'https://your-express-server.render.com'; // замените на ваш production URL
+      
+      apiUrl = `${productionServerUrl}/api/stripe/create-checkout-session`;
+      console.log('🌐 Using production Express server:', productionServerUrl);
     }
     
-    console.log('🌐 Using API URL:', apiUrl);
-    
-    // Получаем токен авторизации для проксированных запросов
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    // Добавляем авторизацию если доступна (для проксированных запросов к Supabase)
-    if (session?.access_token && !window.location.hostname.includes('localhost')) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
+    console.log('🎯 Express server URL:', apiUrl);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(options)
     });
 

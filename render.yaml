@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: multi-model-ai-stripe-server
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://multi-model-ai-assistant.netlify.app
+    healthCheckPath: /health
+    plan: free
