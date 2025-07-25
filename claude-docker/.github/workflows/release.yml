@@ -1,0 +1,25 @@
+name: Docker Claude Code Release
+
+on:
+  push:
+    tags: ['prep']  # Trigger on prep tag
+
+jobs:
+  prepare-release:
+    uses: deepworks-net/github.toolkit/.github/workflows/prepare-release.yml@v1
+    with:
+      changelog_path: CHANGELOG.md
+      
+  calculate-version:
+    uses: deepworks-net/github.toolkit/.github/workflows/core.action.version_calculator.yml@v1
+      
+  update-files:
+    needs: calculate-version
+    uses: deepworks-net/github.toolkit/.github/workflows/core.action.version_updater.yml@v1
+    with:
+      version: ${{ needs.calculate-version.outputs.next_version }}
+      files: |
+        config/claude.config.fcm.json
+        CLAUDE.md
+        README.md
+        config/evolution.log.json

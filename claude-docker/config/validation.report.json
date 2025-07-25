@@ -1,0 +1,20 @@
+{
+  "validation_result": "pass",
+  "timestamp": "2025-06-05T01:22:09.230Z",
+  "rules_checked": 12,
+  "errors": [],
+  "warnings": [],
+  "info": [
+    {
+      "rule_id": "E002",
+      "message": "4 versions in major version 0",
+      "fix_guidance": "Ensure backward compatibility within major version"
+    }
+  ],
+  "summary": {
+    "total_issues": 1,
+    "error_count": 0,
+    "warning_count": 0,
+    "info_count": 1
+  }
+}

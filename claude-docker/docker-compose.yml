@@ -1,0 +1,25 @@
+﻿services:
+  claude-code:
+    image: deepworks/claude-code:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # When used as development tool: mount parent directory as the user's repository
+      - ..:/home/coder/project:rw
+      # Source repo's config/models/validation folders
+      - ./config:/home/coder/claude/config:rw
+      - ./models:/home/coder/claude/models:ro
+      - ./validation:/home/coder/claude/validation:ro
+      # Legacy compatibility links
+      - ./config:/home/coder/config:ro
+      - ./models:/home/coder/models:ro
+      - ./validation:/home/coder/validation:ro
+      # Documentation
+      - ./CLAUDE.md:/home/coder/CLAUDE.md:ro
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    working_dir: /home/coder/project
+    tty: true
+    stdin_open: true
+    command: tail -f /dev/null
