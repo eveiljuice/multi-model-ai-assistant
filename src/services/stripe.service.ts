@@ -210,14 +210,9 @@ class StripeService {
         throw new Error('Express server not running. Please run: npm run server');
       }
     } else {
-      // Production mode - используем Render/Heroku/Railway URL
-      // Эти переменные должны быть настроены в Netlify Environment Variables
-      const productionServerUrl = import.meta.env.VITE_STRIPE_SERVER_URL || 
-                                  window.localStorage.getItem('stripe_server_url') ||
-                                  'https://your-express-server.render.com'; // замените на ваш production URL
-      
-      apiUrl = `${productionServerUrl}/api/stripe/create-checkout-session`;
-      console.log('🌐 Using production Express server:', productionServerUrl);
+      // Production mode - используем Netlify Functions (встроенные в тот же домен)
+      apiUrl = '/.netlify/functions/stripe-checkout';
+      console.log('🌐 Using Netlify Functions for Stripe');
     }
     
     console.log('🎯 Express server URL:', apiUrl);
