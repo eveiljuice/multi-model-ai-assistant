@@ -135,20 +135,13 @@ class StripeService {
   }): Promise<any> {
     console.log('📤 Sending request to create checkout session:', options);
     
-    // Временно пропускаем Edge Function из-за проблем с аутентификацией
-    // TODO: Исправить Edge Function после настройки Supabase secrets
-    console.warn('⚠️ Using Express server fallback (Edge Function disabled for debugging)');
-    return await this.createCheckoutViaExpressServer(options);
-    
-    // Оригинальная логика с fallback (закомментировано для отладки)
-    /*
+    // Используем Edge Function как основной метод
     try {
       return await this.createCheckoutViaEdgeFunction(options);
     } catch (edgeError) {
       console.warn('⚠️ Edge Function failed, trying Express server fallback:', edgeError);
       return await this.createCheckoutViaExpressServer(options);
     }
-    */
   }
 
   private async createCheckoutViaEdgeFunction(options: any): Promise<any> {
@@ -198,18 +191,48 @@ class StripeService {
   }
 
   private async createCheckoutViaExpressServer(options: any): Promise<any> {
-    // Используем прямое подключение к Express серверу если Vite proxy не работает
-    const apiUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3002/api/stripe/create-checkout-session'
-      : '/api/stripe/create-checkout-session';
+    // Этот метод теперь служит как fallback для прямых HTTP запросов
+    // В production используем проксированные запросы к Supabase Edge Functions
+    let apiUrl: string;
+    
+    if (window.location.hostname === 'localhost') {
+      // В development режиме проверяем, работает ли Express сервер
+      try {
+        const healthCheck = await fetch('http://localhost:3002/health', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(2000) // 2 секунды таймаут
+        });
+        if (healthCheck.ok) {
+          apiUrl = 'http://localhost:3002/api/stripe/create-checkout-session';
+        } else {
+          throw new Error('Express server not responding');
+        }
+      } catch (error) {
+        console.warn('🚫 Express server not available, this will fail in development without server');
+        throw new Error('Development server not running. Please run: npm run server');
+      }
+    } else {
+      // В production Netlify проксирует к Supabase Edge Functions
+      // Netlify должен проксировать /api/* к Supabase functions
+      apiUrl = '/api/stripe/create-checkout-session';
+    }
     
     console.log('🌐 Using API URL:', apiUrl);
     
+    // Получаем токен авторизации для проксированных запросов
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Добавляем авторизацию если доступна (для проксированных запросов к Supabase)
+    if (session?.access_token && !window.location.hostname.includes('localhost')) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(options)
     });
 

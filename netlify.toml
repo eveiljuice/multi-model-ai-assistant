@@ -4,4 +4,19 @@
   ignore_submodules = true
 
 [build.environment]
-  NODE_VERSION = "18" 
+  NODE_VERSION = "18"
+
+# Proxy Supabase Edge Functions for Stripe integration
+[[redirects]]
+  from = "/api/stripe/create-checkout-session"
+  to = "https://qnfojsabctyljrwacxnb.supabase.co/functions/v1/stripe-checkout-v4"
+  status = 200
+  force = true
+  headers = {X-Forwarded-Host = "localhost"}
+
+# Fallback for other API routes
+[[redirects]]
+  from = "/api/*"
+  to = "https://qnfojsabctyljrwacxnb.supabase.co/functions/v1/:splat"
+  status = 200
+  force = true 
