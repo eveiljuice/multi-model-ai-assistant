@@ -1,5 +1,9 @@
 const Stripe = require('stripe');
 
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('❌ STRIPE_SECRET_KEY environment variable is not set');
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Продукты Stripe
@@ -43,6 +47,10 @@ function getProductByPriceId(priceId) {
 }
 
 exports.handler = async (event, context) => {
+  console.log('🚀 Netlify Function started');
+  console.log('📝 HTTP Method:', event.httpMethod);
+  console.log('🔑 Has Stripe Key:', !!process.env.STRIPE_SECRET_KEY);
+
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -52,6 +60,7 @@ exports.handler = async (event, context) => {
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
+    console.log('✅ Handling CORS preflight');
     return {
       statusCode: 200,
       headers,
@@ -60,10 +69,21 @@ exports.handler = async (event, context) => {
   }
 
   if (event.httpMethod !== 'POST') {
+    console.log('❌ Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
+
+  // Check if Stripe is configured
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.error('❌ STRIPE_SECRET_KEY not configured');
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Stripe not configured on server' })
     };
   }
 
