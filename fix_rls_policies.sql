@@ -1,121 +1,259 @@
--- Исправление RLS политик для исправления ошибки 409
--- Выполните этот SQL в Supabase SQL Editor как супер-пользователь
+-- Исправление RLS политик для решения проблемы с новыми пользователями
 
--- Временно отключаем RLS для проблемных таблиц
-ALTER TABLE idea_suggestions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE error_logs DISABLE ROW LEVEL SECURITY;
-ALTER TABLE performance_logs DISABLE ROW LEVEL SECURITY;
+-- 1. Исправляем политики для таблицы error_logs
+DROP POLICY IF EXISTS "Users can insert their own error logs" ON error_logs;
+DROP POLICY IF EXISTS "Users can view their own error logs" ON error_logs;
+DROP POLICY IF EXISTS "Service role can manage all error logs" ON error_logs;
 
--- Или альтернативно - создаем разрешающие политики
--- (раскомментируйте этот блок, если хотите оставить RLS включенным)
+-- Создаем более гибкие политики для error_logs
+CREATE POLICY "Users can insert error logs" ON error_logs
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = user_id OR 
+    user_id IS NULL OR
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-/*
--- Политики для idea_suggestions
-DROP POLICY IF EXISTS "idea_suggestions_insert_policy" ON idea_suggestions;
-DROP POLICY IF EXISTS "idea_suggestions_select_policy" ON idea_suggestions;
-DROP POLICY IF EXISTS "idea_suggestions_update_policy" ON idea_suggestions;
+CREATE POLICY "Users can view their own error logs" ON error_logs
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "idea_suggestions_insert_policy" ON idea_suggestions 
-    FOR INSERT TO authenticated 
-    WITH CHECK (true);
+CREATE POLICY "Service role can manage all error logs" ON error_logs
+  FOR ALL
+  TO service_role
+  USING (true);
 
-CREATE POLICY "idea_suggestions_select_policy" ON idea_suggestions 
-    FOR SELECT TO authenticated 
-    USING (true);
+-- 2. Исправляем политики для таблицы credits
+DROP POLICY IF EXISTS "Users can view their own credits" ON credits;
+DROP POLICY IF EXISTS "System can manage all credits" ON credits;
 
-CREATE POLICY "idea_suggestions_update_policy" ON idea_suggestions 
-    FOR UPDATE TO authenticated 
-    USING (user_id = auth.uid());
+CREATE POLICY "Users can view their own credits" ON credits
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
--- Политики для activity_logs
-DROP POLICY IF EXISTS "activity_logs_insert_policy" ON activity_logs;
-DROP POLICY IF EXISTS "activity_logs_select_policy" ON activity_logs;
+CREATE POLICY "Users can update their own credits" ON credits
+  FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "activity_logs_insert_policy" ON activity_logs 
-    FOR INSERT TO authenticated 
-    WITH CHECK (true);
+CREATE POLICY "System can insert credits" ON credits
+  FOR INSERT
+  TO authenticated, service_role
+  WITH CHECK (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "activity_logs_select_policy" ON activity_logs 
-    FOR SELECT TO authenticated 
-    USING (user_id = auth.uid());
+CREATE POLICY "System can manage all credits" ON credits
+  FOR ALL
+  TO service_role
+  USING (true);
 
--- Политики для error_logs
-DROP POLICY IF EXISTS "error_logs_insert_policy" ON error_logs;
-DROP POLICY IF EXISTS "error_logs_select_policy" ON error_logs;
+-- 3. Исправляем политики для таблицы credit_transactions
+DROP POLICY IF EXISTS "Users can view their own transactions" ON credit_transactions;
+DROP POLICY IF EXISTS "System can manage all transactions" ON credit_transactions;
 
-CREATE POLICY "error_logs_insert_policy" ON error_logs 
-    FOR INSERT TO authenticated 
-    WITH CHECK (true);
+CREATE POLICY "Users can view their own transactions" ON credit_transactions
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "error_logs_select_policy" ON error_logs 
-    FOR SELECT TO authenticated 
-    USING (user_id = auth.uid());
+CREATE POLICY "System can insert transactions" ON credit_transactions
+  FOR INSERT
+  TO authenticated, service_role
+  WITH CHECK (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
--- Политики для credits (исправляем 406 ошибку)
-DROP POLICY IF EXISTS "credits_select_policy" ON credits;
-DROP POLICY IF EXISTS "credits_update_policy" ON credits;
-DROP POLICY IF EXISTS "credits_insert_policy" ON credits;
+CREATE POLICY "System can manage all transactions" ON credit_transactions
+  FOR ALL
+  TO service_role
+  USING (true);
 
-CREATE POLICY "credits_select_policy" ON credits 
-    FOR SELECT TO authenticated 
-    USING (user_id = auth.uid());
+-- 4. Исправляем политики для таблицы user_activity
+DROP POLICY IF EXISTS "Users can view their own activity" ON user_activity;
+DROP POLICY IF EXISTS "System can manage all activity" ON user_activity;
 
-CREATE POLICY "credits_update_policy" ON credits 
-    FOR UPDATE TO authenticated 
-    USING (user_id = auth.uid());
+CREATE POLICY "Users can view their own activity" ON user_activity
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "credits_insert_policy" ON credits 
-    FOR INSERT TO authenticated 
-    WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own activity" ON user_activity
+  FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
--- Политики для credit_transactions
-DROP POLICY IF EXISTS "credit_transactions_select_policy" ON credit_transactions;
-DROP POLICY IF EXISTS "credit_transactions_insert_policy" ON credit_transactions;
+CREATE POLICY "System can insert activity" ON user_activity
+  FOR INSERT
+  TO authenticated, service_role
+  WITH CHECK (
+    auth.uid() = user_id OR 
+    auth.jwt() ->> 'role' = 'service_role'
+  );
 
-CREATE POLICY "credit_transactions_select_policy" ON credit_transactions 
-    FOR SELECT TO authenticated 
-    USING (user_id = auth.uid());
+CREATE POLICY "System can manage all activity" ON user_activity
+  FOR ALL
+  TO service_role
+  USING (true);
 
-CREATE POLICY "credit_transactions_insert_policy" ON credit_transactions 
-    FOR INSERT TO authenticated 
-    WITH CHECK (user_id = auth.uid());
+-- 5. Улучшаем функцию инициализации кредитов
+CREATE OR REPLACE FUNCTION initialize_user_trial_credits_safe(user_uuid uuid)
+RETURNS boolean AS $$
+DECLARE
+  user_exists boolean := false;
+  credits_exist boolean := false;
+BEGIN
+  -- Проверяем существование пользователя в auth.users
+  SELECT EXISTS(
+    SELECT 1 FROM auth.users 
+    WHERE id = user_uuid 
+    AND deleted_at IS NULL
+  ) INTO user_exists;
+  
+  IF NOT user_exists THEN
+    RAISE NOTICE 'User % does not exist in auth.users', user_uuid;
+    RETURN false;
+  END IF;
+  
+  -- Проверяем существование записи в credits
+  SELECT EXISTS(
+    SELECT 1 FROM credits 
+    WHERE user_id = user_uuid
+  ) INTO credits_exist;
+  
+  IF credits_exist THEN
+    RAISE NOTICE 'User % already has credits', user_uuid;
+    RETURN false;
+  END IF;
+  
+  -- Создаем запись в credits
+  INSERT INTO credits (user_id, balance, created_at, updated_at)
+  VALUES (user_uuid, 5, now(), now());
+  
+  -- Создаем транзакцию
+  INSERT INTO credit_transactions (
+    user_id,
+    amount,
+    type,
+    description,
+    created_at
+  ) VALUES (
+    user_uuid,
+    5,
+    'trial',
+    'Initial trial credits (safe initialization)',
+    now()
+  );
+  
+  -- Создаем запись активности если её нет
+  INSERT INTO user_activity (user_id, last_active, weekly_logins, created_at, updated_at)
+  VALUES (user_uuid, now(), 1, now(), now())
+  ON CONFLICT (user_id) DO NOTHING;
+  
+  RAISE NOTICE 'Successfully initialized credits for user %', user_uuid;
+  RETURN true;
+  
+EXCEPTION
+  WHEN foreign_key_violation THEN
+    RAISE NOTICE 'Foreign key violation for user %', user_uuid;
+    RETURN false;
+  WHEN unique_violation THEN
+    RAISE NOTICE 'Credits already exist for user %', user_uuid;
+    RETURN false;
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Error initializing credits for user %: %', user_uuid, SQLERRM;
+    RETURN false;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Политики для users
-DROP POLICY IF EXISTS "users_select_policy" ON users;
-DROP POLICY IF EXISTS "users_update_policy" ON users;
-DROP POLICY IF EXISTS "users_insert_policy" ON users;
+-- 6. Обновляем триггер
+CREATE OR REPLACE FUNCTION trigger_initialize_user_credits_safe()
+RETURNS trigger AS $$
+BEGIN
+  -- Инициализируем кредиты безопасно
+  PERFORM initialize_user_trial_credits_safe(NEW.id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE POLICY "users_select_policy" ON users 
-    FOR SELECT TO authenticated 
-    USING (id = auth.uid());
+-- Пересоздаем триггер
+DROP TRIGGER IF EXISTS on_auth_user_created_initialize_credits ON auth.users;
+CREATE TRIGGER on_auth_user_created_initialize_credits
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION trigger_initialize_user_credits_safe();
 
-CREATE POLICY "users_update_policy" ON users 
-    FOR UPDATE TO authenticated 
-    USING (id = auth.uid());
+-- 7. Предоставляем права
+GRANT EXECUTE ON FUNCTION initialize_user_trial_credits_safe TO authenticated, anon, service_role;
+GRANT EXECUTE ON FUNCTION trigger_initialize_user_credits_safe TO authenticated, anon, service_role;
 
-CREATE POLICY "users_insert_policy" ON users 
-    FOR INSERT TO authenticated 
-    WITH CHECK (id = auth.uid());
+-- 8. Создаем функцию для ручного исправления пользователей
+CREATE OR REPLACE FUNCTION fix_user_missing_credits()
+RETURNS TABLE(
+  user_id uuid,
+  email text,
+  fixed boolean,
+  error_message text
+) AS $$
+DECLARE
+  user_record record;
+  fix_result boolean;
+  error_msg text;
+BEGIN
+  FOR user_record IN 
+    SELECT au.id, au.email
+    FROM auth.users au
+    WHERE au.deleted_at IS NULL
+    AND NOT EXISTS (SELECT 1 FROM credits c WHERE c.user_id = au.id)
+  LOOP
+    BEGIN
+      fix_result := initialize_user_trial_credits_safe(user_record.id);
+      error_msg := NULL;
+    EXCEPTION
+      WHEN OTHERS THEN
+        fix_result := false;
+        error_msg := SQLERRM;
+    END;
+    
+    RETURN QUERY SELECT 
+      user_record.id,
+      user_record.email,
+      fix_result,
+      error_msg;
+  END LOOP;
+  
+  RETURN;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Политики для agent_pricing (публичное чтение)
-DROP POLICY IF EXISTS "agent_pricing_select_policy" ON agent_pricing;
+GRANT EXECUTE ON FUNCTION fix_user_missing_credits TO service_role;
 
-CREATE POLICY "agent_pricing_select_policy" ON agent_pricing 
-    FOR SELECT TO authenticated 
-    USING (true);
+-- 9. Добавляем индекс для user_activity если его нет
+CREATE UNIQUE INDEX IF NOT EXISTS user_activity_user_id_unique ON user_activity(user_id);
 
--- Политики для performance_logs
-DROP POLICY IF EXISTS "performance_logs_insert_policy" ON performance_logs;
-DROP POLICY IF EXISTS "performance_logs_select_policy" ON performance_logs;
-
-CREATE POLICY "performance_logs_insert_policy" ON performance_logs 
-    FOR INSERT TO authenticated 
-    WITH CHECK (true);
-
-CREATE POLICY "performance_logs_select_policy" ON performance_logs 
-    FOR SELECT TO authenticated 
-    USING (user_id = auth.uid());
-*/
-
-SELECT 'RLS policies updated successfully' as status; 
+-- 10. Комментарии для документации
+COMMENT ON FUNCTION initialize_user_trial_credits_safe IS 'Безопасная инициализация пробных кредитов для пользователя с проверками';
+COMMENT ON FUNCTION fix_user_missing_credits IS 'Исправление пользователей без записей в credits';

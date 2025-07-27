@@ -1,207 +1,213 @@
-# 🔧 Исправление проблем с базой данных
+# Исправление проблем с новыми пользователями
 
-## 🚨 **Обнаруженные проблемы:**
+## Проблема
 
-### 1. **404 ошибки на таблицу `session_security`**
+На новосозданных аккаунтах возникают ошибки:
 
-**Проблема:** Приложение пытается обращаться к таблице `session_security`, которая не существует в базе данных.
+1. **Credit deduction failed for agent** - не удается списать кредиты
+2. **Foreign key constraint violation** - пользователь не существует в таблице `users` при попытке логирования ошибок
 
-**Временное решение:**
+## Причины
 
-- Отключен функционал session security в `src/services/sessionSecurity.ts`
-- Добавлена константа `SESSION_SECURITY_ENABLED = false`
-- Все методы теперь возвращают успешные результаты без обращения к БД
+1. **Триггер инициализации кредитов не срабатывает** - новые пользователи не получают начальные кредиты
+2. **RLS политики слишком строгие** - блокируют создание записей для новых пользователей
+3. **Отсутствие записи в user_activity** - нет связанных данных активности пользователя
 
-### 2. **500 ошибка в Edge Function `stripe-checkout`**
+## Решение
 
-**Проблема:** Edge Function возвращает Internal Server Error.
+### Шаг 1: Применить исправления RLS политик
 
-**Возможные причины:**
+```bash
+# Применить SQL исправления
+psql -h your-supabase-host -U postgres -d postgres -f fix_rls_policies.sql
+```
 
-- Отсутствующие таблицы в базе данных
-- Неправильные ключи Stripe
-- Проблемы с аутентификацией
-- Ошибки в коде Edge Function
+Или через Supabase Dashboard:
 
-## 🛠️ **Необходимые таблицы для создания:**
+1. Перейти в SQL Editor
+2. Выполнить содержимое файла `fix_rls_policies.sql`
 
-### **1. Таблица `session_security`**
+### Шаг 2: Диагностика конкретного пользователя
+
+```bash
+# Установить зависимости если нужно
+npm install @supabase/supabase-js dotenv
+
+# Запустить диагностику
+node debug-user-issue.js user@example.com
+```
+
+### Шаг 3: Исправление конкретного пользователя
+
+```bash
+# Исправить проблему для конкретного пользователя
+node fix-user-credits-issue.js user@example.com
+```
+
+### Шаг 4: Массовое исправление всех пользователей
+
+Через SQL Editor в Supabase:
 
 ```sql
-CREATE TABLE IF NOT EXISTS session_security (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id TEXT NOT NULL,
-  fingerprint TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  is_active BOOLEAN DEFAULT TRUE,
+-- Исправить всех пользователей без кредитов
+SELECT * FROM fix_user_missing_credits();
+```
 
-  UNIQUE(user_id, session_id)
+## Проверка исправления
+
+### 1. Проверить инициализацию кредитов
+
+```sql
+-- Проверить пользователей без кредитов
+SELECT au.id, au.email, au.created_at
+FROM auth.users au
+LEFT JOIN credits c ON c.user_id = au.id
+WHERE c.user_id IS NULL
+AND au.deleted_at IS NULL;
+```
+
+### 2. Проверить работу триггера
+
+```sql
+-- Создать тестового пользователя (через приложение)
+-- Проверить автоматическое создание кредитов
+SELECT c.*, ct.*
+FROM credits c
+LEFT JOIN credit_transactions ct ON ct.user_id = c.user_id
+WHERE c.user_id = 'test-user-id';
+```
+
+### 3. Проверить логирование ошибок
+
+```sql
+-- Попробовать создать запись в error_logs
+INSERT INTO error_logs (
+  user_id,
+  session_id,
+  error_type,
+  error_message,
+  component,
+  severity
+) VALUES (
+  'test-user-id',
+  'test-session',
+  'test_error',
+  'Test error message',
+  'test-component',
+  'low'
 );
 ```
 
-### **2. Таблица `security_events`**
+## Улучшения в коде
 
-```sql
-CREATE TABLE IF NOT EXISTS security_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL,
-  severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
-  details JSONB,
-  ip_address INET,
-  user_agent TEXT,
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+### 1. Обновить функцию списания кредитов
 
-### **3. Индексы для производительности**
-
-```sql
--- Session security indexes
-CREATE INDEX IF NOT EXISTS idx_session_security_user_id ON session_security(user_id);
-CREATE INDEX IF NOT EXISTS idx_session_security_session_id ON session_security(session_id);
-CREATE INDEX IF NOT EXISTS idx_session_security_is_active ON session_security(is_active);
-CREATE INDEX IF NOT EXISTS idx_session_security_last_activity ON session_security(last_activity);
-
--- Security events indexes
-CREATE INDEX IF NOT EXISTS idx_security_events_user_id ON security_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_security_events_event_type ON security_events(event_type);
-CREATE INDEX IF NOT EXISTS idx_security_events_severity ON security_events(severity);
-CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp);
-```
-
-### **4. RLS политики**
-
-```sql
--- Enable RLS
-ALTER TABLE session_security ENABLE ROW LEVEL SECURITY;
-ALTER TABLE security_events ENABLE ROW LEVEL SECURITY;
-
--- Session security policies
-CREATE POLICY "Users can view their own session security" ON session_security
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can manage their own session security" ON session_security
-  FOR ALL USING (auth.uid() = user_id);
-
--- Security events policies
-CREATE POLICY "Users can view their own security events" ON security_events
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "System can create security events" ON security_events
-  FOR INSERT WITH CHECK (true);
-```
-
-## 🔍 **Диагностика Edge Function:**
-
-### **1. Проверка логов**
-
-```bash
-# Получить логи Edge Functions
-npx supabase functions logs stripe-checkout
-
-# Или через web интерфейс
-# https://supabase.com/dashboard/project/sgzlhcagtesjazvwskjw/functions
-```
-
-### **2. Локальное тестирование**
-
-```bash
-# Запустить функции локально
-npx supabase functions serve --no-verify-jwt
-
-# Тестировать через curl
-curl -X POST http://localhost:54321/functions/v1/stripe-checkout \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"price_id": "price_1RiUt0AK7V4m73aluYckgD6P", "mode": "subscription"}'
-```
-
-### **3. Проверка переменных окружения**
-
-Убедиться, что все секреты настроены:
-
-```bash
-npx supabase secrets list
-```
-
-Должны быть:
-
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-## 🚀 **Исправления в коде:**
-
-### **1. Отключение session security (✅ Выполнено)**
+В `src/services/creditService.ts` добавить дополнительную проверку:
 
 ```typescript
-// В src/services/sessionSecurity.ts
-const SESSION_SECURITY_ENABLED = false;
+// Перед списанием кредитов проверить существование пользователя
+const { data: userCheck } = await supabase
+  .from("credits")
+  .select("user_id")
+  .eq("user_id", userId)
+  .single();
+
+if (!userCheck) {
+  // Попробовать инициализировать кредиты
+  await supabase.rpc("initialize_user_trial_credits_safe", {
+    user_uuid: userId,
+  });
+}
 ```
 
-### **2. Обработка ошибок в PricingCard (✅ Выполнено)**
+### 2. Обновить логирование ошибок
 
-- Добавлен показ ошибок пользователю
-- Исправлена обработка состояния загрузки
-- Добавлен AuthModal для неавторизованных пользователей
+В `src/services/loggingService.ts` добавить fallback:
 
-## 📋 **Следующие шаги:**
+```typescript
+// При ошибке foreign key constraint попробовать без user_id
+if (error && error.code === "23503") {
+  const logDataWithoutUser = {
+    ...logData,
+    user_id: null,
+  };
 
-### **Немедленные действия:**
+  const { error: fallbackError } = await supabase
+    .from("error_logs")
+    .insert([logDataWithoutUser]);
 
-1. ✅ Отключить session security (выполнено)
-2. ⏳ Проверить логи Edge Function
-3. ⏳ Протестировать покупку после отключения session security
-
-### **Долгосрочные решения:**
-
-1. 🔄 Создать недостающие таблицы в БД
-2. 🔄 Включить session security обратно
-3. 🔄 Настроить мониторинг ошибок
-
-## 🧪 **Тестирование:**
-
-### **1. Тест без авторизации**
-
-```javascript
-// В консоли браузера
-console.log("Testing unauthorized purchase...");
-// Нажать кнопку "Купить" - должно показать AuthModal
+  if (!fallbackError) {
+    console.log("Error logged without user_id");
+  }
+}
 ```
 
-### **2. Тест с авторизацией**
+## Мониторинг
 
-```javascript
-// В консоли браузера
-console.log("User authenticated:", !!user);
-// Нажать кнопку "Купить" - должно перенаправить на Stripe
+### Создать алерт для отслеживания проблем
+
+```sql
+-- Создать view для мониторинга пользователей без кредитов
+CREATE OR REPLACE VIEW users_without_credits AS
+SELECT
+  au.id,
+  au.email,
+  au.created_at,
+  EXTRACT(EPOCH FROM (now() - au.created_at))/3600 as hours_since_creation
+FROM auth.users au
+LEFT JOIN credits c ON c.user_id = au.id
+WHERE c.user_id IS NULL
+AND au.deleted_at IS NULL
+AND au.created_at > now() - interval '24 hours';
 ```
 
-### **3. Тест Edge Function**
+### Настроить уведомления
 
-```javascript
-// Использовать кнопку "Тест Edge Function" в UI
-// Должно показать успешный результат
+```sql
+-- Функция для отправки уведомлений о проблемах
+CREATE OR REPLACE FUNCTION notify_missing_credits()
+RETURNS void AS $$
+DECLARE
+  problem_count integer;
+BEGIN
+  SELECT count(*) INTO problem_count
+  FROM users_without_credits
+  WHERE hours_since_creation > 1; -- Пользователи без кредитов больше часа
+
+  IF problem_count > 0 THEN
+    -- Здесь можно добавить логику отправки уведомлений
+    INSERT INTO error_logs (
+      user_id,
+      session_id,
+      error_type,
+      error_message,
+      component,
+      severity
+    ) VALUES (
+      NULL,
+      'system',
+      'missing_credits_alert',
+      format('Found %s users without credits', problem_count),
+      'monitoring',
+      'high'
+    );
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-## 🛡️ **Безопасность:**
+## Предотвращение в будущем
 
-### **Временное отключение session security:**
+1. **Добавить проверки в регистрацию** - убедиться что кредиты создаются
+2. **Улучшить обработку ошибок** - graceful fallback при проблемах с БД
+3. **Мониторинг** - отслеживать пользователей без кредитов
+4. **Тесты** - добавить тесты для процесса регистрации
 
-- ✅ Не влияет на основную функциональность
-- ⚠️ Снижает уровень безопасности
-- 🔄 Нужно включить обратно после создания таблиц
+## Контакты для поддержки
 
-### **Мониторинг:**
+При возникновении проблем:
 
-- Проверять логи на наличие подозрительной активности
-- Мониторить неудачные попытки входа
-- Отслеживать необычные паттерны использования
-
----
-
-_Последнее обновление: отключен session security для устранения 404 ошибок_
+1. Проверить логи Supabase
+2. Запустить диагностический скрипт
+3. Применить исправления из этого документа
+4. Обратиться к разработчику если проблема не решена
